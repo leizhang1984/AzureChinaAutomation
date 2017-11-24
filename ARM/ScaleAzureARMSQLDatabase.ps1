@@ -1,3 +1,6 @@
+//Thanks MSFT GuoRong Feng
+//Modified by MSFT Lei Zhang
+
 workflow UpdateAzureSQLDatabase
 {
     
