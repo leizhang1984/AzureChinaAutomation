@@ -27,5 +27,3 @@ if ($srv.State -ne "Succeeded")
 #提升SKU
 Set-AzAnalysisServicesServer -ResourceGroupName $ResourceGroupName -Name $ASServerName -Sku $MaxSKU -ErrorAction Stop | Out-Null
 "AAS SKU已经设置为" + $MaxSKU
-
-
