@@ -4,28 +4,28 @@
 $Conn = Get-AutomationConnection -Name AzureRunAsConnection
 Connect-AzAccount -EnvironmentName AzureChinaCloud -ServicePrincipal -Tenant $Conn.TenantID -ApplicationId $Conn.ApplicationID -CertificateThumbprint $Conn.CertificateThumbprint
 
-# è·å¾—å˜é‡
+# »ñµÃ±äÁ¿
 $ResourceGroupName = Get-AutomationVariable -Name 'ResourceGroupName'
 $ServerName = Get-AutomationVariable -Name 'SynapaseServerName'
 $DatabaseName = Get-AutomationVariable -Name 'DatabaseName'
 
-#æ¯æ¬¡å˜é‡æ—¶é—´éƒ½æ˜¯å½“å¤©China Time Zoneæ—¶é—´
+#Ã¿´Î±äÁ¿Ê±¼ä¶¼ÊÇµ±ÌìChina Time ZoneÊ±¼ä
 $ChinaTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneByID("China Standard Time")
 $currentTime = [System.TimeZoneInfo]::ConvertTimefromUTC((get-date).ToUniversalTime(),$ChinaTimeZone)
 $Label = $currentTime.ToString("yyyy-MM-dd HH:mm:ss.ffffzzz")
 
 Write-Output $Label
 
-#è·å¾—å½“å‰SynapseçŠ¶æ€
-$status = Get-AzSqlDatabase -ResourceGroupName $ResourceGroupName -ServerName $ServerName -DatabaseName $DatabaseName
+#»ñµÃµ±Ç°Synapse×´Ì¬
+$synapsestatus = Get-AzSqlDatabase -ResourceGroupName $ResourceGroupName -ServerName $ServerName -DatabaseName $DatabaseName
 
-if ($status.Status -ne "Online")
+if ($synapsestatus.Status -ne "Online")
 {
-    Write-Output "SynapseæœåŠ¡å¿…é¡»è®¾ç½®ä¸ºå¯åŠ¨çŠ¶æ€"
+    Write-Output "Synapse·şÎñ±ØĞëÉèÖÃÎªÆô¶¯×´Ì¬"
     exit
 }
 
-#å¼€å§‹å¤‡ä»½Synapse
+#¿ªÊ¼±¸·İSynapse
 New-AzSqlDatabaseRestorePoint -ResourceGroupName $ResourceGroupName -ServerName $ServerName -DatabaseName $DatabaseName -RestorePointLabel $Label
 
-Write-Output "å¤‡ä»½æˆåŠŸ"
+Write-Output "±¸·İ³É¹¦"
