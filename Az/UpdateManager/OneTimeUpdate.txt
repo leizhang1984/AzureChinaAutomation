@@ -1,0 +1,92 @@
+#获得变量
+#$VMNames = Get-AutomationVariable -Name VMNames
+$vmListString = "updatemanager-rg,server2019-vm01;updatemanager-rg,server2019-vm02"
+
+#$automationAccount = "leiupdate-automation"
+
+# Ensures you do not inherit an AzContext in your runbook
+$null = Disable-AzContextAutosave -Scope Process
+
+# Connect using a Managed Service Identity
+try {
+    $AzureConnection = (Connect-AzAccount -Environment AzureChinaCloud -Identity).context
+}
+catch {
+    Write-Output "There is no system-assigned user identity. Aborting." 
+    exit
+}
+
+
+# 获取所有订阅
+$subscriptions = Get-AzSubscription
+
+$utc8 = Get-TimeZone -Id "Singapore Standard Time"
+$now = Get-Date
+$utc8Time = [TimeZoneInfo]::ConvertTime($now, [TimeZoneInfo]::Local, $utc8)
+Write-Output $utc8Time
+
+# 循环遍历每个订阅
+foreach ($subscription in $subscriptions) 
+{
+    # 切换到当前订阅
+    Set-AzContext -SubscriptionId $subscription.Id
+
+    # 拆分虚拟机列表字符串为数组
+    $vmArray = $vmListString -split ';'
+
+    #循环所有虚拟机
+    foreach ($vm in $vmArray)
+    {
+        $vmDetails = $vm -split ','
+        #资源组名称
+        $rgname = $vmDetails[0]
+
+        #虚拟机名称
+        $vmname = $vmDetails[1]
+        # 获取所有虚拟机
+        $vms = Get-AzVM | Where-Object { $_.Name -eq $vmname }
+        #查看虚拟机是否正在运行
+        #....
+
+        Invoke-AzVMPatchAssessment -ResourceGroupName $rgname -vmname $vmname -AsJob
+    }
+    # 获取所有后台任务
+    $jobs = Get-Job
+
+    # 等待所有后台任务
+    Wait-Job -Job $jobs
+    
+    $now = Get-Date
+    $utc8Time = [TimeZoneInfo]::ConvertTime($now, [TimeZoneInfo]::Local, $utc8)
+    Write-Output $utc8Time
+    Write-Output "Assessment complete. Continuing with the next steps..."
+
+    #循环所有虚拟机
+    foreach ($vm in $vmArray)
+    {
+        $vmDetails = $vm -split ','
+        #资源组名称
+        $rgname = $vmDetails[0]
+
+        #虚拟机名称
+        $vmname = $vmDetails[1]
+
+         #开始打补丁
+        Invoke-AzVmInstallPatch -ResourceGroupName $rgname -vmname $vmname `
+        -MaximumDuration "PT90M" -RebootSetting "Always" `
+        -Windows -ClassificationToIncludeForWindows Critical,Definition,FeaturePack,Security,ServicePack,Tools,UpdateRollUp,Updates -AsJob
+    }
+
+    # 获取所有后台任务
+    $jobs = Get-Job
+
+    # 等待所有后台任务
+    Wait-Job -Job $jobs
+
+
+    $now = Get-Date
+    $utc8Time = [TimeZoneInfo]::ConvertTime($now, [TimeZoneInfo]::Local, $utc8)
+    Write-Output $utc8Time
+    Write-Output "Patching complete. All Done..."
+   
+}
