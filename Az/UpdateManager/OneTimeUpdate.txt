@@ -20,7 +20,7 @@ catch {
 # 获取所有订阅
 $subscriptions = Get-AzSubscription
 
-$utc8 = Get-TimeZone -Id "Singapore Standard Time"
+$utc8 = Get-TimeZone -Id "China Standard Time"
 $now = Get-Date
 $utc8Time = [TimeZoneInfo]::ConvertTime($now, [TimeZoneInfo]::Local, $utc8)
 Write-Output $utc8Time
@@ -56,6 +56,32 @@ foreach ($subscription in $subscriptions)
     # 等待所有后台任务
     Wait-Job -Job $jobs
     
+    #检查任务状态
+    foreach ($job in $jobs) 
+    {
+        Wait-Job -Job $job
+          # 检查任务状态
+        if ($job.State -eq 'Completed') 
+        {
+            # 获取任务输出
+            $output = Receive-Job -Job $job
+            
+            # 检查输出是否包含错误
+            if ($output -is [System.Management.Automation.ErrorRecord]) 
+            {
+                Write-Output "Job ID $($job.Id) failed with error: $($output.Exception.Message)"
+            } 
+            else 
+            {
+                Write-Output "Job ID $($job.Id) completed successfully."
+            }
+        } 
+        else 
+        {
+            Write-Output "Job ID $($job.Id) did not complete successfully. State: $($job.State)"
+        }
+    }
+    
     $now = Get-Date
     $utc8Time = [TimeZoneInfo]::ConvertTime($now, [TimeZoneInfo]::Local, $utc8)
     Write-Output $utc8Time
@@ -83,7 +109,32 @@ foreach ($subscription in $subscriptions)
     # 等待所有后台任务
     Wait-Job -Job $jobs
 
-
+     #检查任务状态
+    foreach ($job in $jobs) 
+    {
+        Wait-Job -Job $job
+          # 检查任务状态
+        if ($job.State -eq 'Completed') 
+        {
+            # 获取任务输出
+            $output = Receive-Job -Job $job
+            
+            # 检查输出是否包含错误
+            if ($output -is [System.Management.Automation.ErrorRecord]) 
+            {
+                Write-Output "Job ID $($job.Id) failed with error: $($output.Exception.Message)"
+            } 
+            else 
+            {
+                Write-Output "Job ID $($job.Id) completed successfully."
+            }
+        } 
+        else 
+        {
+            Write-Output "Job ID $($job.Id) did not complete successfully. State: $($job.State)"
+        }
+    }
+    
     $now = Get-Date
     $utc8Time = [TimeZoneInfo]::ConvertTime($now, [TimeZoneInfo]::Local, $utc8)
     Write-Output $utc8Time
