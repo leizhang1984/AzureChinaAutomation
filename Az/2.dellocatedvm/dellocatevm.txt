@@ -1,0 +1,30 @@
+$vmNames = Get-AutomationVariable -Name "vmNames"
+Write-Output $vmNames
+
+# Convert the semicolon-separated list of VM names into an array
+$vmNameArray = $vmNames -split ";"
+
+# Authenticate to Azure using Managed Identity
+try {
+    "Logging in to Azure using Managed Identity..."
+    Connect-AzAccount -Identity
+}
+catch {
+    $ErrorMessage = "Could not authenticate to Azure using Managed Identity. " + $_
+    throw $ErrorMessage
+}
+
+foreach ($vmName in $vmNameArray) {
+    $vm = Get-AzVM -Name $vmName -Status
+    if ($vm) {
+        try {
+            Stop-AzVM -Name $vmName -ResourceGroupName $vm.ResourceGroupName -Force -NoWait
+            Write-Output "Stopping VM: $vmName"
+        }
+        catch {
+            Write-Output "Failed to stop VM: $vmName. Error: $_"
+        }
+    } else {
+        Write-Output "VM $vmName not found."
+    }
+}
