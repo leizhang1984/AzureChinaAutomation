@@ -1,3 +1,6 @@
+#需要在Automation里设置一个variables，变量名称也叫vmNames
+#vmNames里面的虚拟机名称用分号(;)做分隔符
+
 $vmNames = Get-AutomationVariable -Name "vmNames"
 Write-Output $vmNames
 
